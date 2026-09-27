@@ -1,40 +1,57 @@
-# jaios-notion-gateway
+# JAIOS Notion Gateway
 
-<!--
-JAIOS Compliance Notes
-Deployment Location: Vercel → jaios-notion-gateway
-Governance Impact: Ingests Notion webhook events, routes to deploy-kit, logs to Deploys DB
-Sanitization Requirement: Strip PII before Notion write
-Secrets Handling: Doppler only
--->
+Production-oriented webhook gateway for the **JenR8ed AI Operating System (JAIOS)**.
 
-Production webhook gateway for the **JenR8ed AI Operating System (JAIOS)**.
+> **Current state:** Implemented integration component. It provides a concrete boundary between Notion events and JAIOS deployment workflows.
 
 ## What it does
 
 - Receives Notion webhook events at `POST /api/webhook`
-- Verifies HMAC-SHA256 signature (`x-notion-signature` header)
-- Validates event schema with Zod
-- Routes events to deploy-kit actions
-- Logs every event to the JAIOS Deploys DB in Notion
+- Verifies HMAC-SHA256 signatures via `x-notion-signature`
+- Validates event payloads with Zod
+- Routes events to deployment-kit actions
+- Logs events to the JAIOS Deploys DB in Notion
 
-## Required Doppler Secrets
+## Security boundary
 
-| Secret | Description |
-|---|---|
-| `NOTION_TOKEN` | Notion integration token |
-| `NOTION_WEBHOOK_SECRET` | HMAC secret for webhook verification |
-| `NOTION_DEPLOYS_DB_ID` | ID of the JAIOS Deploys DB |
+```
+Notion Event
+     |
+     v
+Signature Verification
+     |
+     v
+Schema Validation
+     |
+     v
+JAIOS Routing
+     |
+     +-- deployment action
+     +-- audit / Deploys DB
+```
+
+Security model:
+- HMAC verification at ingress
+- typed request validation
+- no committed credentials
+- managed secrets
+- audit logging
+- PII minimization before Notion writes
+
+## Relationship to JAIOS
+
+This service is intentionally narrow:
+
+**Notion is the event source; JAIOS routing is the control boundary; Deploys DB is the audit surface.**
+
+It is not the JAIOS runtime itself.
 
 ## Deployment
 
-1. Import this repo into Vercel as a new project
-2. Set Doppler as the secrets source (do NOT use Vercel env vars directly)
-3. Re-add custom domains: `jenr8ed.live` + `www.jenr8ed.live`
-4. Update Notion integration with the new webhook URL: `https://jenr8ed.live/api/webhook`
+Intended deployment target: Vercel. Environment/secrets should be injected through the managed secret workflow rather than committed .env files.
 
-## JAIOS Principles
+## Related repositories
 
-- **Zero-trust**: Doppler only. No `.env` files. Ever.
-- **FSAD**: This service is stateless. All state lives in Notion.
-- **Audit trail**: Every event is logged to the Deploys DB.
+- [jaios-agentic-core](https://github.com/JenR8ed/jaios-agentic-core)
+- [jenr8ed-deploy-kit](https://github.com/JenR8ed/jenr8ed-deploy-kit)
+- [AI-List-Assist](https://github.com/JenR8ed/AI-List-Assist)
