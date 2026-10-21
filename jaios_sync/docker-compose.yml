@@ -1,0 +1,11 @@
+services:
+  jaios-sync:
+    build: .
+    environment:
+      WATCH_DIR: /app/fsad_storage
+      NOTION_TOKEN: ${NOTION_TOKEN:?Provide via Doppler}
+      NOTION_DATABASE_ID: ${NOTION_DATABASE_ID:?Select the target database}
+      POLL_INTERVAL_SECONDS: ${POLL_INTERVAL_SECONDS:-30}
+    volumes:
+      - ./fsad_storage:/app/fsad_storage
+    restart: unless-stopped
